@@ -1,13 +1,14 @@
 extern crate clap;
 
-use std::net::{ToSocketAddrs, IpAddr, TcpStream};
+use std::net::{ToSocketAddrs, IpAddr};
 use std::io::{Error};
 use std::process;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
 use clap::{App, Arg};
 
-const MAX_PORT: u16 = 65535;
+mod scan;
+use scan::scan;
 
 fn main() {
     let matches = App::new("Port Scanner")
@@ -63,24 +64,4 @@ fn main() {
     }
 
     println!("Output: {:?}", output);
-}
-
-fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
-    let mut current_port = start_port + 1;
-    loop {
-        match TcpStream::connect((addr, current_port)) {
-            Ok(_) => {
-                // Connection succeeded, send port number
-                tx.send(current_port).unwrap();
-            },
-            Err(_) => {
-                // connection failed, nothing to do
-            }
-        }
-
-        if (MAX_PORT - current_port) <= num_threads {
-            break;
-        }
-        current_port += num_threads;
-    }
 }
