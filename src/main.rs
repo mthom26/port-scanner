@@ -5,45 +5,18 @@ use std::io::{Error};
 use std::process;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
-use clap::{App, Arg};
 
 mod scan;
 use scan::scan;
 
+mod config;
+use config::Config;
+
 fn main() {
-    let matches = App::new("Port Scanner")
-        .arg(Arg::with_name("url")
-                .help("The URL to scan")
-                .required(true))
-        .arg(Arg::with_name("threads")
-                .help("Number of threads to use")
-                .short("t")
-                .long("threads")
-                .takes_value(true)
-                .value_name("threads")
-                .default_value("100"))
-        .arg(Arg::with_name("ports")
-                .help("Port range to scan")
-                .short("p")
-                .long("ports")
-                .takes_value(true)
-                .number_of_values(2)
-                .value_names(&["Start Port", "End Port"]))
-        .get_matches();
+    let config = Config::new();
 
-    println!("{:?}", matches);
-
-    let url = matches.value_of("url").unwrap();
-    let num_threads = matches.value_of("threads").unwrap();
-    let mut port_range = matches.values_of("ports").unwrap();
-    let start_port = port_range.next().unwrap();
-    let end_port = port_range.next().unwrap();
-    println!("Url: {}", url);
-    println!("Num Threads: {}", num_threads);
-    println!("Ports: {} - {}", start_port, end_port);
-    
     // Convert url to socket address
-    let address: Result<Vec<IpAddr>, Error> = (url, 0).to_socket_addrs().map(|iter| {
+    let address: Result<Vec<IpAddr>, Error> = (&config.url[..], 0).to_socket_addrs().map(|iter| {
         iter.map(|addr| addr.ip()).collect()
     });
     
@@ -56,16 +29,16 @@ fn main() {
     let address = address.unwrap();
     println!("{:?}", address);
 
-    let num_threads: u16 = num_threads.parse().unwrap();
-    let start_port: u16 = start_port.parse().unwrap();
-    let end_port: u16 = end_port.parse().unwrap();
     let (tx, rx) = channel();
-    for index in 0..num_threads {
+    for index in 0..config.threads {
         let tx = Sender::clone(&tx);
         // TODO - maybe send reference of address to 'scan()' instead? 
         let addr = address.clone()[0];
+        let threads = config.threads;
+        let start_port = config.start_port;
+        let end_port = config.end_port;
         thread::spawn(move || {
-            scan(tx, index, addr, num_threads, start_port, end_port);
+            scan(tx, index, addr, threads, start_port, end_port);
         });
     }
 
