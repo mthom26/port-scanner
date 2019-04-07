@@ -57,13 +57,15 @@ fn main() {
     println!("{:?}", address);
 
     let num_threads: u16 = num_threads.parse().unwrap();
+    let start_port: u16 = start_port.parse().unwrap();
+    let end_port: u16 = end_port.parse().unwrap();
     let (tx, rx) = channel();
     for index in 0..num_threads {
         let tx = Sender::clone(&tx);
         // TODO - maybe send reference of address to 'scan()' instead? 
         let addr = address.clone()[0];
         thread::spawn(move || {
-            scan(tx, index, addr, num_threads);
+            scan(tx, index, addr, num_threads, start_port, end_port);
         });
     }
 

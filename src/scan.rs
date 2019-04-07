@@ -1,10 +1,15 @@
 use std::net::{TcpStream, IpAddr};
 use std::sync::mpsc::Sender;
 
-const MAX_PORT: u16 = 65535;
-
-pub fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
-    let mut current_port = start_port + 1;
+pub fn scan(
+    tx: Sender<u16>,
+    index: u16,
+    addr: IpAddr,
+    num_threads: u16,
+    start_port: u16,
+    end_port: u16
+) {
+    let mut current_port = start_port + index + 1;
     loop {
         match TcpStream::connect((addr, current_port)) {
             Ok(_) => {
@@ -16,7 +21,7 @@ pub fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
             }
         }
 
-        if (MAX_PORT - current_port) <= num_threads {
+        if (end_port - current_port) <= num_threads {
             break;
         }
         current_port += num_threads;
