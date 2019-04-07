@@ -22,14 +22,25 @@ fn main() {
                 .takes_value(true)
                 .value_name("threads")
                 .default_value("100"))
+        .arg(Arg::with_name("ports")
+                .help("Port range to scan")
+                .short("p")
+                .long("ports")
+                .takes_value(true)
+                .number_of_values(2)
+                .value_names(&["Start Port", "End Port"]))
         .get_matches();
 
     println!("{:?}", matches);
 
     let url = matches.value_of("url").unwrap();
     let num_threads = matches.value_of("threads").unwrap();
+    let mut port_range = matches.values_of("ports").unwrap();
+    let start_port = port_range.next().unwrap();
+    let end_port = port_range.next().unwrap();
     println!("Url: {}", url);
     println!("Num Threads: {}", num_threads);
+    println!("Ports: {} - {}", start_port, end_port);
     
     // Convert url to socket address
     let address: Result<Vec<IpAddr>, Error> = (url, 0).to_socket_addrs().map(|iter| {
